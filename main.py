@@ -13,18 +13,15 @@ import argparse
 import logging
 import jieba
 import pymongo
+import datetime
 
 #from hashes.simhash import simhash
-#from chinese_util import remove_uesless_char
+from chinese_util import remove_uesless_char
 from sim_hashing import SimHash
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--output", help="output file输出")
-parser.add_argument("--threshold", help="output file输出")
-args = parser.parse_args()
 
 logging.basicConfig(
     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
@@ -40,32 +37,61 @@ collection = db["content_warehouse"]
 
 result_set = set()
 hash_dict = dict()
-output_file = open(args.output, "w")
-threshold = int(args.threshold)
+parser = argparse.ArgumentParser()
 
 
 def process_title(title):
-    title = remove_uesless_char(item['title'])
-    title_list = [x for x in jieba.cut(title) if x != " "]
-    title_cut = " ".join(title_list)
-    return title_cut
+    title = remove_uesless_char(title)
+    title_list = [x for x in jieba.cut(title) if x != " " and len(x) > 1]
+    return title_list
 
 
 def get_simhash_object(title):
-    hash_result = simhash(title)
+    hash_result = SimHash(title)
     return hash_result
 
 
-for index, item in enumerate(collection.find()):
-    title = item['title']
-    new_title = process_title(title)
-    hash1 = get_simhash_object(new_title)
-    hash_dict[hash1] = title
-    for hash2 in result_set:
-        distance = hash1.hamming_distance(hash2)
-        if distance < threshold:
-            output_file.write("%s %s %d" % (hash_dict[hash1], hash_dict[hash2], distance))
-            output_file.write("\n")
-    result_set.add(hash1)
+def main():
+    parser.add_argument("--output", help="output file输出")
+    parser.add_argument("--threshold", help="output file输出")
+    args = parser.parse_args()
+    output_file = open(args.output, "w")
+    threshold = int(args.threshold)
+    start_date = (datetime.datetime.now() - datetime.timedelta(1)).strftime("%Y-%m-%d 00:00:00")
+    end_date = (datetime.datetime.now() - datetime.timedelta(1)).strftime("%Y-%m-%d 23:59:59")
+    result = collection.find({'crawl_time':{"$gte":start_date,"$lte":end_date}})
+    for index, item in enumerate(result):
+        title = item['title']
+        new_title = process_title(title)
+        hash1 = get_simhash_object(new_title)
+        hash_dict[hash1] = title
+        for hash2 in result_set:
+            distance = hash1.hamming_distance(hash2)
+            if distance < threshold:
+                output_file.write("%s\t%s\t%d" %
+                                  (hash_dict[hash1], hash_dict[hash2], distance))
+                output_file.write("\n")
+        result_set.add(hash1)
+    output_file.close()
 
-output_file.close()
+
+def test():
+    while True:
+        #title1 = u"又变脸了？baby照镜发自拍 网友发现不太一样了"
+        title1 = raw_input(u"第一句话\n")
+        title1 = title1.decode("utf-8")
+        new_title1 = process_title(title1)
+        hash1 = get_simhash_object(new_title1)
+        #title2 = u"又变脸了？baby照镜发自拍， 网友发现不太一样"
+        title2 = raw_input(u"第二句话\n")
+        title2 = title2.decode("utf-8")
+        new_title2 = process_title(title2)
+        hash2 = get_simhash_object(new_title2)
+        distance = hash1.hamming_distance(hash2)
+        print "\nresult:%d" % (distance)
+
+
+if __name__ == "__main__":
+    #main()
+    test()
+

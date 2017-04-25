@@ -16,10 +16,6 @@ import jieba
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-parser = argparse.ArgumentParser()
-#parser.add_argument()
-args = parser.parse_args()
-
 logging.basicConfig(
     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
     level=logging.DEBUG,
