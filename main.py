@@ -42,7 +42,7 @@ parser = argparse.ArgumentParser()
 
 def process_title(title):
     title = remove_uesless_char(title)
-    title_list = [x for x in jieba.cut(title) if x != " " and len(x) > 1]
+    title_list = [x for x in jieba.cut(title) if x != " " and x not in stop_word_set]
     return title_list
 
 
@@ -50,6 +50,12 @@ def get_simhash_object(title):
     hash_result = SimHash(title)
     return hash_result
 
+stop_word_file = open("stop_words.utf8")
+stop_word_set = set()
+for line in stop_word_file:
+    line = line.decode('utf-8').strip()
+    stop_word_set.add(line)
+logging.info("length stop_word_set:%d" % len(stop_word_set))
 
 def main():
     parser.add_argument("--output", help="output file输出")
@@ -77,15 +83,19 @@ def main():
 
 def test():
     while True:
-        #title1 = u"又变脸了？baby照镜发自拍 网友发现不太一样了"
+        #title1 = u"她是身家上亿的豪门千金 却穿借来的衣服路边吃盒饭"
         title1 = raw_input(u"第一句话\n")
         title1 = title1.decode("utf-8")
         new_title1 = process_title(title1)
+        for item in new_title1:
+            print item
         hash1 = get_simhash_object(new_title1)
-        #title2 = u"又变脸了？baby照镜发自拍， 网友发现不太一样"
+        #title2 = u"父亲身家19亿，她穿借来的衣服路边吃盒饭"
         title2 = raw_input(u"第二句话\n")
         title2 = title2.decode("utf-8")
         new_title2 = process_title(title2)
+        for item in new_title2:
+            print item
         hash2 = get_simhash_object(new_title2)
         distance = hash1.hamming_distance(hash2)
         print "\nresult:%d" % (distance)
