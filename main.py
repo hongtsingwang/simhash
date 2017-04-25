@@ -42,13 +42,15 @@ parser = argparse.ArgumentParser()
 
 def process_title(title):
     title = remove_uesless_char(title)
-    title_list = [x for x in jieba.cut(title) if x != " " and x not in stop_word_set]
+    title_list = [x for x in jieba.cut(
+        title) if x != " " and x not in stop_word_set]
     return title_list
 
 
 def get_simhash_object(title):
     hash_result = SimHash(title)
     return hash_result
+
 
 stop_word_file = open("stop_words.utf8")
 stop_word_set = set()
@@ -57,15 +59,19 @@ for line in stop_word_file:
     stop_word_set.add(line)
 logging.info("length stop_word_set:%d" % len(stop_word_set))
 
+
 def main():
     parser.add_argument("--output", help="output file输出")
-    parser.add_argument("--threshold", help="output file输出")
+    parser.add_argument("--threshold", help="汉明距离上限")
     args = parser.parse_args()
     output_file = open(args.output, "w")
     threshold = int(args.threshold)
-    start_date = (datetime.datetime.now() - datetime.timedelta(1)).strftime("%Y-%m-%d 00:00:00")
-    end_date = (datetime.datetime.now() - datetime.timedelta(1)).strftime("%Y-%m-%d 23:59:59")
-    result = collection.find({'crawl_time':{"$gte":start_date,"$lte":end_date}})
+    start_date = (datetime.datetime.now() - datetime.timedelta(1)
+                  ).strftime("%Y-%m-%d 00:00:00")
+    end_date = (datetime.datetime.now() - datetime.timedelta(1)
+                ).strftime("%Y-%m-%d 23:59:59")
+    result = collection.find(
+        {'crawl_time': {"$gte": start_date, "$lte": end_date}})
     for index, item in enumerate(result):
         title = item['title']
         new_title = process_title(title)
@@ -83,14 +89,12 @@ def main():
 
 def test():
     while True:
-        #title1 = u"她是身家上亿的豪门千金 却穿借来的衣服路边吃盒饭"
         title1 = raw_input(u"第一句话\n")
         title1 = title1.decode("utf-8")
         new_title1 = process_title(title1)
         for item in new_title1:
             print item
         hash1 = get_simhash_object(new_title1)
-        #title2 = u"父亲身家19亿，她穿借来的衣服路边吃盒饭"
         title2 = raw_input(u"第二句话\n")
         title2 = title2.decode("utf-8")
         new_title2 = process_title(title2)
@@ -102,6 +106,5 @@ def test():
 
 
 if __name__ == "__main__":
-    #main()
-    test()
-
+    main()
+    #test()
